@@ -12,11 +12,24 @@ struct CardView: View {
     var removal: (() -> Void)? = nil
     @State private var isShowingAnswer = false
     @State private var offset = CGSize.zero
+    @Environment(\.accessibilityDifferentiateWithoutColor) var differentiateWithoutColor //考虑红绿色盲
+    @State private var feedback = UINotificationFeedbackGenerator()
+    //跳过部分可访问性
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 25, style: .continuous)
-                .fill(Color.white)
+                .fill(differentiateWithoutColor
+                        ? Color.white
+                        : Color.white
+                        .opacity(1 - Double(abs(offset.width / 50))))
+                .background(
+                    differentiateWithoutColor
+                        ? nil
+                        : RoundedRectangle(cornerRadius: 25, style: .continuous)
+                        .fill(offset.width > 0 ? Color.green : Color.red)
+                )
+
                 .shadow(radius: 10)
 
             VStack {
@@ -36,14 +49,21 @@ struct CardView: View {
             .rotationEffect(.degrees(Double(offset.width / 5)))
             .offset(x: offset.width * 5, y: 0)
             .opacity(2 - Double(abs(offset.width / 50)))
+            .accessibility(addTraits: .isButton)
             .gesture(
                 DragGesture()
                     .onChanged { gesture in
                         offset = gesture.translation
+                        feedback.prepare()
                     }
 
                     .onEnded { _ in
                         if abs(offset.width) > 100 {
+                            if offset.width > 0 {
+                                feedback.notificationOccurred(.success)
+                            } else {
+                                feedback.notificationOccurred(.error)
+                            }
                             removal?()
                         } else {
                             offset = .zero

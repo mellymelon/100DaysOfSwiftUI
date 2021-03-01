@@ -5,7 +5,7 @@
 //  Created by Yong Liang on 2/27/21.
 //
 
-struct Card {
+struct Card: Codable {
     let prompt: String
     let answer: String
 
